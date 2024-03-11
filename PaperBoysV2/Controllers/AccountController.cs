@@ -3,17 +3,14 @@ using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.EntityFrameworkCore;
 using PaperBoysV2.Models;
 using PaperBoysV2.ViewModels;
+using Microsoft.Extensions.Logging;
 
 namespace PaperBoysV2.Controllers
 {
-    public class AccountController : Controller
+    public class AccountController(PaperBoysDbContext context, ILogger<AccountController> logger) : Controller
     {
-        private readonly PaperBoysDbContext _context;
-
-        public AccountController(PaperBoysDbContext context)
-        {
-            _context = context;
-        }
+        private readonly PaperBoysDbContext _context = context;
+        private readonly ILogger<AccountController> _logger = logger;
 
         public IActionResult Register()
         {
@@ -60,5 +57,52 @@ namespace PaperBoysV2.Controllers
             return View(model);
         }
 
+
+        public IActionResult Login()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Login(UserLoginViewModel model)
+        {
+            if (ModelState.IsValid)
+            {
+                try
+                {
+                    // Find the user by email
+                    var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == model.Email);
+
+                    // If the user is found and the password matches
+                    if (user != null && BCrypt.Net.BCrypt.Verify(model.Password, user.Password))
+                    {
+                        // Set user ID and role in session
+                        HttpContext.Session.SetInt32("UserId", user.UserId);
+                        HttpContext.Session.SetString("UserRole", user.Role ? "Admin" : "User");
+
+                        // Log successful login attempt
+                        _logger.LogInformation($"User {model.Email} logged in successfully.");
+
+                        // Redirect the user to the home page or a dashboard
+                        return RedirectToAction("Index", "Home");
+                    }
+
+                    //failed login attempt
+                    _logger.LogWarning($"Failed login attempt for user {model.Email}.");
+
+                    //User not found or wrong password
+                    ModelState.AddModelError(string.Empty, "Invalid email or password.");
+                }
+                catch (Exception ex)
+                {
+                    ModelState.AddModelError(string.Empty, "An error occurred while processing your request. Please try again later.");
+                    _logger.LogError(ex, "An error occurred while processing login request.");
+                }
+            }
+
+         
+            return View(model);
+        }
     }
 }
