@@ -43,14 +43,14 @@ namespace PaperBoysV2.Controllers
                     Role = false
                 };
 
-                // Add the new user to the database
+                // Add the user to the database
                 _context.Users.Add(newUser);
                 _context.SaveChanges();
 
 
                 TempData["SuccessMessage"] = "Registration successful! You can now log in.";
 
-                // Redirect to login page and begin session
+                // Redirect to login page
                 return RedirectToAction("Login");
             }
 
@@ -71,7 +71,7 @@ namespace PaperBoysV2.Controllers
             {
                 try
                 {
-                    // Find the user by email
+                    
                     var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == model.Email);
 
                     // If the user is found and the password matches
@@ -84,7 +84,7 @@ namespace PaperBoysV2.Controllers
                         // Log successful login attempt
                         _logger.LogInformation($"User {model.Email} logged in successfully.");
 
-                        // Redirect the user to the home page or a dashboard
+                        // Redirect the user to the home page
                         return RedirectToAction("Index", "Home");
                     }
 
