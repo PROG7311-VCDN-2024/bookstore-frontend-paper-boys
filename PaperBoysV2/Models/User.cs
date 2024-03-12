@@ -10,7 +10,7 @@ public partial class User
 
     public string Password { get; set; } = null!;
 
-    public bool Role { get; set; }
+    public string UserRole { get; set; } = "CUSTOMER";
 
     public virtual ICollection<Cart> Carts { get; set; } = new List<Cart>();
 
