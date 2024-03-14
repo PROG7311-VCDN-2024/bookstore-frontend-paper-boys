@@ -1,4 +1,5 @@
 using PaperBoysV2.Models;
+using Microsoft.AspNetCore.Session;
 
 namespace PaperBoysV2
 {
@@ -12,7 +13,14 @@ namespace PaperBoysV2
             builder.Services.AddControllersWithViews();
 
             builder.Services.AddDbContext<PaperBoysDbContext>();
- 
+
+            builder.Services.AddDistributedMemoryCache();
+            builder.Services.AddSession(options =>
+            {
+                options.IdleTimeout = TimeSpan.FromMinutes(15);
+                options.Cookie.HttpOnly = true;
+            });
+
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.
@@ -27,6 +35,8 @@ namespace PaperBoysV2
             app.UseStaticFiles();
 
             app.UseRouting();
+
+            app.UseSession();
 
             app.UseAuthorization();
 

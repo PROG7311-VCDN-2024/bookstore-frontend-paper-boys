@@ -77,8 +77,8 @@ namespace PaperBoysV2.Controllers
                     if (user != null && BCrypt.Net.BCrypt.Verify(model.Password, user.Password))
                     {
                         // Set user ID and role in session
-                        //HttpContext.Session.SetInt32("UserId", user.UserId);
-                        //HttpContext.Session.SetString("UserRole", user.UserRole);
+                        HttpContext.Session.SetInt32("UserId", user.UserId);
+                        HttpContext.Session.SetString("UserRole", user.UserRole);
 
                         // Log successful login attempt
                         _logger.LogInformation($"User {model.Email} logged in successfully.");
