@@ -4,6 +4,9 @@ using Microsoft.EntityFrameworkCore;
 using PaperBoysV2.Models;
 using PaperBoysV2.ViewModels;
 using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication;
+using System.Security.Claims;
 
 namespace PaperBoysV2.Controllers
 {
@@ -70,15 +73,28 @@ namespace PaperBoysV2.Controllers
             {
                 try
                 {
-                    
+                    // Find the user by email
                     var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == model.Email);
 
                     // If the user is found and the password matches
                     if (user != null && BCrypt.Net.BCrypt.Verify(model.Password, user.Password))
                     {
-                        // Set user ID and role in session
-                        HttpContext.Session.SetInt32("UserId", user.UserId);
-                        HttpContext.Session.SetString("UserRole", user.UserRole);
+                        // Retrieve the user's role from the database
+                        var userRole = user.UserRole;
+
+                        // Create claims for the user, including the role
+                        var claims = new List<Claim>
+                {
+                    new(ClaimTypes.NameIdentifier, user.UserId.ToString()),
+                    new(ClaimTypes.Email, user.Email),
+                    new(ClaimTypes.Role, userRole)
+                };
+
+                        // Create claims identity
+                        var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+
+                        // Sign in the user
+                        await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(claimsIdentity));
 
                         // Log successful login attempt
                         _logger.LogInformation($"User {model.Email} logged in successfully.");
@@ -87,10 +103,10 @@ namespace PaperBoysV2.Controllers
                         return RedirectToAction("Index", "Home");
                     }
 
-                    //failed login attempt
+                    // Failed login attempt
                     _logger.LogWarning($"Failed login attempt for user {model.Email}.");
 
-                    //User not found or wrong password
+                    // User not found or wrong password
                     ModelState.AddModelError(string.Empty, "Invalid email or password.");
                 }
                 catch (Exception ex)
@@ -100,7 +116,6 @@ namespace PaperBoysV2.Controllers
                 }
             }
 
-         
             return View(model);
         }
     }
